@@ -72,18 +72,19 @@ describe("CartmanBridge", function () {
             messageId = event.args.messageId;
         });
 
-        it("Should correctly reimburse the relayer and send profit to the vault", async function () {
+        it("Should correctly reimburse the relayer, capture gas arbitrage, and send profit to the vault", async function () {
             const actualGasCost = ethers.parseEther("0.8");
             const initialVaultBalance = await ethers.provider.getBalance(await feeVault.getAddress());
 
             await expect(bridge.connect(ibcModule).reimburseRelayer(relayer.address, messageId, actualGasCost))
-                .to.emit(bridge, "RelayerReimbursed");
+                .to.emit(bridge, "RelayerReimbursed")
+                .and.to.emit(bridge, "GasArbCaptured");
 
             const finalVaultBalance = await ethers.provider.getBalance(await feeVault.getAddress());
             expect(finalVaultBalance - initialVaultBalance).to.equal(ethers.parseEther("0.2"));
         });
 
-        it("Should enforce the minimum profit floor", async function () {
+        it("Should enforce the minimum profit floor when gas costs are high", async function () {
             const actualGasCost = ethers.parseEther("0.98");
             const initialVaultBalance = await ethers.provider.getBalance(await feeVault.getAddress());
 
@@ -91,6 +92,20 @@ describe("CartmanBridge", function () {
 
             const finalVaultBalance = await ethers.provider.getBalance(await feeVault.getAddress());
             expect(finalVaultBalance - initialVaultBalance).to.equal(ethers.parseEther("0.03"));
+        });
+
+        it("Should correctly reimburse when gas cost is very high, respecting profit floor", async function () {
+            const actualGasCost = ethers.parseEther("0.99");
+            const initialVaultBalance = await ethers.provider.getBalance(await feeVault.getAddress());
+            const initialRelayerBalance = await ethers.provider.getBalance(relayer.address);
+
+            await bridge.connect(ibcModule).reimburseRelayer(relayer.address, messageId, actualGasCost);
+
+            const finalVaultBalance = await ethers.provider.getBalance(await feeVault.getAddress());
+            expect(finalVaultBalance - initialVaultBalance).to.equal(ethers.parseEther("0.03"));
+
+            const finalRelayerBalance = await ethers.provider.getBalance(relayer.address);
+            expect(finalRelayerBalance - initialRelayerBalance).to.equal(ethers.parseEther("0.97"));
         });
     });
 
@@ -155,6 +170,41 @@ describe("CartmanBridge", function () {
             await expect(
                 bridge.connect(user).refundLockedGasFee(messageId, user.address)
             ).to.be.revertedWithCustomError(bridge, "Unauthorized");
+        });
+    });
+
+    describe("IBC Integration", function () {
+        it("Should handle wHONEY redemption packets", async function () {
+            const amount = ethers.parseEther("100");
+            const recipient = user.address;
+            const payload = ethers.AbiCoder.defaultAbiCoder().encode(
+                ["uint256", "address"],
+                [amount, recipient]
+            );
+
+            const packet = ethers.concat([ethers.toBeHex(0x1BCC0DE1, 4), payload]);
+
+            await expect(bridge.connect(ibcModule).receive_ibc_packet(packet))
+                .to.emit(bridge, "AssetMinted")
+                .withArgs(recipient, await honeyToken.getAddress(), amount);
+        });
+
+        it("Should handle generic message packets", async function () {
+            const MockWrappedTokenFactory = await ethers.getContractFactory("MockWrappedToken", deployer);
+            const genericToken = await MockWrappedTokenFactory.deploy();
+
+            const amount = ethers.parseEther("50");
+            const recipient = user.address;
+            const payload = ethers.AbiCoder.defaultAbiCoder().encode(
+                ["address", "uint256", "address", "bytes"],
+                [await genericToken.getAddress(), amount, recipient, "0x"]
+            );
+
+            const packet = ethers.concat([ethers.toBeHex(0x1BCC0DE2, 4), payload]);
+
+            await expect(bridge.connect(ibcModule).receive_ibc_packet(packet))
+                .to.emit(bridge, "AssetMinted")
+                .withArgs(recipient, await genericToken.getAddress(), amount);
         });
     });
 });

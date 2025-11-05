@@ -1,6 +1,4 @@
-// File: CartmanBridge.sol
-// Purpose: EVM-Native Deep Integration for Berachain, managing IBC, ICA, and Guaranteed Profit (GP) Extraction.
-
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 // --- Imports (Conceptual Interfaces) ---
@@ -19,7 +17,6 @@ interface IWrappedToken {
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
-// ** NEW INTERFACE: Auto-Compound Fee Vault **
 interface IFeeVault {
     function depositProfit() external payable;
 }
@@ -44,28 +41,42 @@ bytes4 constant PACKET_TYPE_GENERIC_MESSAGE  = 0x1BCC0DE2;
 // --- Imports (from OpenZeppelin) ---
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-// --- Cartman's Core Bridge Contract ---
+/**
+ * @title CartmanBridge
+ * @author Your Name
+ * @notice EVM-Native Deep Integration for Berachain, managing IBC, ICA, and Guaranteed Profit (GP) Extraction.
+ */
 contract CartmanBridge is ReentrancyGuard {
 
-    // EVM Addresses
-    address public immutable WHONEY_TOKEN;
-    address public immutable ICA_HUB;
-    address public immutable FEE_VAULT; // ** NEW: Address for yield compounding **
+    // --- State Variables ---
 
+    /// @notice The address of the wHONEY token contract.
+    address public immutable WHONEY_TOKEN;
+    /// @notice The address of the Interchain Accounts (ICA) Hub.
+    address public immutable ICA_HUB;
+    /// @notice The address of the auto-compounding fee vault.
+    address public immutable FEE_VAULT;
+
+    /// @notice The address of the IBC precompile contract.
     address public constant IBC_PRECOMPILE_ADDRESS = address(uint160(0x80081BC));
+    /// @notice The address of the IBC module handler.
     address public IBC_MODULE_HANDLER;
 
-    // Services
+    /// @notice The interchain gas service contract.
     IInterchainGasService public immutable gasService;
 
-    // State
-    uint256 public cartmanFeeShare; // Base 5% (5)
-    uint256 public minProfitBps = 300;  // ** NEW: 3% guaranteed minimum profit floor (300) **
+    /// @notice The fee share percentage for the protocol.
+    uint256 public cartmanFeeShare;
+    /// @notice The minimum profit floor in basis points.
+    uint256 public minProfitBps;
 
+    /// @notice A mapping from message ID to locked fees.
     mapping(bytes32 => uint256) public lockedFees;
-    mapping(bytes32 => uint256) public gasArbReserve; // ** NEW: Holds the gas overpayment delta **
+    /// @notice A mapping from message ID to the gas arbitrage reserve.
+    mapping(bytes32 => uint256) public gasArbReserve;
 
-    // Events
+    // --- Events ---
+
     event CrossChainMessageSent(uint16 indexed destinationChain, bytes32 indexed messageId, address indexed sender);
     event AssetMinted(address indexed user, address indexed token, uint256 amount);
     event IcaGovernanceExecuted(address indexed ica, bytes32 indexed payloadHash);
@@ -73,53 +84,80 @@ contract CartmanBridge is ReentrancyGuard {
     event GasFeeRefunded(bytes32 indexed messageId, address indexed recipient, uint256 amount);
     event MinProfitBpsUpdated(uint256 newProfitBps);
     event RelayerReimbursed(bytes32 indexed messageId, address indexed relayer, uint256 reimbursement, uint256 effectiveCut);
-    event GasArbCaptured(bytes32 indexed messageId, uint256 arbAmount); // ** NEW **
+    event GasArbCaptured(bytes32 indexed messageId, uint256 arbAmount);
 
+    /**
+     * @notice Constructs the CartmanBridge contract.
+     * @param _honey The address of the wHONEY token.
+     * @param _icaHub The address of the ICA Hub.
+     * @param _gasService The address of the interchain gas service.
+     * @param _feeVault The address of the fee vault.
+     */
     constructor(address _honey, address _icaHub, address _gasService, address _feeVault) {
         WHONEY_TOKEN = _honey;
         ICA_HUB = _icaHub;
         gasService = IInterchainGasService(_gasService);
         FEE_VAULT = _feeVault;
         cartmanFeeShare = 5; // Initialize with a 5% fee
+        minProfitBps = 300; // Initialize with a 3% profit floor
         IBC_MODULE_HANDLER = msg.sender; // Set the deployer as the initial handler
     }
 
+    /**
+     * @notice Sets the IBC module handler address.
+     * @param newHandler The address of the new IBC module handler.
+     */
     function setIbcModuleHandler(address newHandler) external onlyIcaHub {
         IBC_MODULE_HANDLER = newHandler;
     }
 
     // --- Modifiers ---
+
+    /**
+     * @dev Throws if called by any account other than the IBC module handler.
+     */
     modifier onlyIbcModule() {
         if (msg.sender != IBC_MODULE_HANDLER) revert InvalidIbcModule();
         _;
     }
 
+    /**
+     * @dev Throws if called by any account other than the ICA Hub.
+     */
     modifier onlyIcaHub() {
         if (msg.sender != ICA_HUB) revert Unauthorized();
         _;
     }
 
-    // ** NEW: Failsafe Profit Guard **
+    /**
+     * @dev Ensures that a transaction does not breach the minimum profit floor.
+     * @param amountToWithdraw The amount to be withdrawn from the contract.
+     */
     modifier profitGuard(uint256 amountToWithdraw) {
-        // Required floor is based on the current contract balance, ensuring the remaining balance >= floor.
-        // E.g., if balance=100 and floor=10, amountToWithdraw can be at most 90.
         uint256 requiredFloor = (address(this).balance * minProfitBps) / 10_000;
         if (address(this).balance < amountToWithdraw + requiredFloor) revert ProfitFloorBreached();
         _;
     }
 
-    // --- I. IBC Integration (Stubs for completeness) ---
+    // --- IBC Integration ---
 
-    // Retained for outbound wHONEY flow
+    /**
+     * @notice Sends a burn transaction to the IBC precompile.
+     * @param amount The amount of wHONEY to burn.
+     * @param destinationIBCChannel The destination IBC channel.
+     */
     function sendBurnToIBC(uint256 amount, string memory destinationIBCChannel) external {
         IWrappedToken(WHONEY_TOKEN).burn(msg.sender, amount);
         bytes memory payloadData = abi.encode(amount, msg.sender);
         bytes memory payload = abi.encodePacked(PACKET_TYPE_WHONEY_REDEMPTION, payloadData);
         IBCPrecompile(IBC_PRECOMPILE_ADDRESS).submitIBCPacket(abi.encode(destinationIBCChannel, payload));
-        emit CrossChainMessageSent(888, keccak256(payload), msg.sender); // Simple keccak for messageId
+        emit CrossChainMessageSent(888, keccak256(payload), msg.sender);
     }
 
-    // Retained for inbound packet handling with type discrimination
+    /**
+     * @notice Handles incoming IBC packets.
+     * @param verifiedPayload The verified IBC packet payload.
+     */
     function receive_ibc_packet(bytes memory verifiedPayload) external onlyIbcModule {
         bytes4 packetType;
         bytes memory payloadData = verifiedPayload;
@@ -141,26 +179,38 @@ contract CartmanBridge is ReentrancyGuard {
         }
     }
 
-    // --- II. ICA Governance (Extended) ---
+    // --- ICA Governance ---
 
+    /**
+     * @notice Executes a series of EVM transactions via the ICA Hub.
+     * @param evmTxPayloads An array of EVM transaction payloads.
+     */
     function execute_ica_governance(bytes[] memory evmTxPayloads) external onlyIbcModule {
         if (msg.sender != ICA_HUB) revert Unauthorized();
         for (uint i = 0; i < evmTxPayloads.length; i++) {
             (bool success,) = ICA_HUB.call(evmTxPayloads[i]);
             if (!success) revert IcaExecutionFailed();
         }
-        // Simplified event: IcaGovernanceExecuted
     }
 
-    // ** NEW ICA function: Update Profit Floor **
+    /**
+     * @notice Updates the minimum profit floor.
+     * @param newProfitBps The new minimum profit floor in basis points.
+     */
     function updateMinProfitBps(uint256 newProfitBps) external onlyIcaHub {
-        if (newProfitBps > 1000) revert FeeShareTooHigh(); // Max 10% (1000 BPS)
+        if (newProfitBps > 1000) revert FeeShareTooHigh(); // Max 10%
         minProfitBps = newProfitBps;
         emit MinProfitBpsUpdated(newProfitBps);
     }
 
-    // --- III. IGP Settlement (Refactored for Guaranteed Profit) ---
+    // --- IGP Settlement ---
 
+    /**
+     * @notice Pays for interchain gas.
+     * @param destinationChain The destination chain ID.
+     * @param gasLimit The gas limit for the transaction.
+     * @return messageId The ID of the message.
+     */
     function payInterchainGas(uint16 destinationChain, uint256 gasLimit) public payable returns (bytes32 messageId) {
         if (msg.value == 0) revert ZeroGasPayment();
 
@@ -176,22 +226,24 @@ contract CartmanBridge is ReentrancyGuard {
         emit CrossChainMessageSent(destinationChain, messageId, msg.sender);
     }
 
-    // ** REFACTORED: Reimbursement with Dynamic Fee Amplifier & Auto-Compound Vault **
+    /**
+     * @notice Reimburses a relayer for gas costs and auto-compounds the profit.
+     * @param relayer The address of the relayer.
+     * @param messageId The ID of the message.
+     * @param actualGasCost The actual gas cost of the transaction.
+     */
     function reimburseRelayer(address relayer, bytes32 messageId, uint256 actualGasCost)
         external
         onlyIbcModule
-        profitGuard(0) // Check the total balance integrity before starting settlement
-        nonReentrant // Protect against reentrancy attacks
+        profitGuard(0)
+        nonReentrant
     {
         uint256 totalFee = lockedFees[messageId];
         if (totalFee == 0) revert FeeAlreadyClaimedOrInvalid();
 
-        // 1. Calculate Initial Cut (based on cartmanFeeShare)
         uint256 initialCartmanCut = (totalFee * cartmanFeeShare) / 100;
         uint256 initialRelayerPayment = totalFee - initialCartmanCut;
 
-        // 2. Elastic Gas Arbitrage Module: Capture Overpayment
-        // If the relayer was overpaid, capture 50% of the difference as additional profit.
         uint256 gasSpreadArb = 0;
         if (initialRelayerPayment > actualGasCost) {
             uint256 delta = initialRelayerPayment - actualGasCost;
@@ -199,27 +251,20 @@ contract CartmanBridge is ReentrancyGuard {
             gasArbReserve[messageId] = gasSpreadArb;
         }
 
-        // The reimbursement amount is the minimum needed (actualGasCost)
         uint256 reimbursement = actualGasCost;
 
-        // 3. Dynamic Fee Amplifier: Enforce Profit Floor
-        // Calculate the maximum possible cut based on the profit floor or the base share.
         uint256 effectiveCut = enforceProfitFloor(totalFee, reimbursement);
 
         uint256 finalRelayerPayment = totalFee - effectiveCut;
         uint256 finalCartmanCut = effectiveCut;
 
-        // Final sanity check: Ensure no funds are lost or created.
         if (finalRelayerPayment + finalCartmanCut != totalFee) revert SettlementMathError();
 
-        delete lockedFees[messageId]; // Prevents reentrancy/double claim
+        delete lockedFees[messageId];
 
-        // 4. Reimburse Relayer and Auto-Compound Profit
-        // Transfer the final calculated payment to the relayer.
         (bool success1,) = relayer.call{value: finalRelayerPayment}("");
         if (!success1) revert("Relayer reimbursement failed.");
 
-        // Deposit all profit into the auto-compounding fee vault.
         (bool success2,) = FEE_VAULT.call{value: finalCartmanCut}("");
         if (!success2) revert AutoCompoundFailed();
 
@@ -227,47 +272,61 @@ contract CartmanBridge is ReentrancyGuard {
         if (gasSpreadArb > 0) emit GasArbCaptured(messageId, gasSpreadArb);
     }
 
-    // ** NEW: Internal function to enforce the Guaranteed Profit Floor **
+    /**
+     * @notice Enforces the guaranteed profit floor.
+     * @param totalFee The total fee paid for the transaction.
+     * @param reimbursement The amount to be reimbursed.
+     * @return effectiveCut The effective cut for the protocol.
+     */
     function enforceProfitFloor(uint256 totalFee, uint256 reimbursement) internal view returns (uint256 effectiveCut) {
         uint256 requiredProfit = (totalFee * minProfitBps) / 10_000;
         uint256 currentCut = totalFee - reimbursement;
 
-        // Effective cut is the max of the static profit (currentCut) and the required floor (requiredProfit).
         if (currentCut < requiredProfit) {
             effectiveCut = requiredProfit;
         } else {
             effectiveCut = currentCut;
         }
 
-        // Safety check: The effective cut cannot exceed the total fee.
         if (effectiveCut > totalFee) return totalFee;
 
         return effectiveCut;
     }
 
-    // ** NEW ICA function: Update Cartman Fee Share **
+    /**
+     * @notice Updates the Cartman fee share.
+     * @param newFeeShare The new fee share percentage.
+     */
     function updateCartmanFeeShare(uint256 newFeeShare) external onlyIcaHub {
         if (newFeeShare > 20) revert FeeShareTooHigh(); // Max 20%
         cartmanFeeShare = newFeeShare;
         emit FeeShareUpdated(newFeeShare);
     }
 
-    // ** REFACTORED: Refund using Profit Guard **
+    /**
+     * @notice Refunds a locked gas fee.
+     * @param messageId The ID of the message.
+     * @param recipient The recipient of the refund.
+     */
     function refundLockedGasFee(bytes32 messageId, address payable recipient) external onlyIcaHub profitGuard(lockedFees[messageId]) nonReentrant {
         uint256 amount = lockedFees[messageId];
         if (amount == 0) revert FeeAlreadyClaimedOrInvalid();
 
         delete lockedFees[messageId];
 
-        // Full locked amount is refunded. Profit is zero.
         (bool success,) = recipient.call{value: amount}("");
         if (!success) revert RefundTransferFailed();
 
         emit GasFeeRefunded(messageId, recipient, amount);
     }
 
-    // NOTE: Access functions for gasArbReserve, while useful, are omitted for brevity in the core bridge logic.
-
+    /**
+     * @dev Slices a bytes array.
+     * @param bs The bytes array to slice.
+     * @param start The starting index.
+     * @param len The length of the slice.
+     * @return A new bytes array containing the slice.
+     */
     function _slice(bytes memory bs, uint start, uint len) internal pure returns (bytes memory) {
         bytes memory t = new bytes(len);
         for (uint i = 0; i < len; i++) {

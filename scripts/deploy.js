@@ -14,7 +14,7 @@ async function main() {
     const MockFeeVaultFactory = await ethers.getContractFactory("MockFeeVault");
     const feeVault = await MockFeeVaultFactory.deploy();
 
-    const CartmanBridgeFactory = await ethers.get_ContractFactory("CartmanBridge");
+    const CartmanBridgeFactory = await ethers.getContractFactory("CartmanBridge");
     const bridge = await CartmanBridgeFactory.deploy(
         await honeyToken.getAddress(),
         deployer.address, // Using deployer as the initial ICA_HUB

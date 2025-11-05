@@ -38,13 +38,20 @@ npx hardhat test
 
 ## Deployment
 
-The deployment process is streamlined with a Hardhat script. To deploy the contract, follow these steps:
+The deployment process is streamlined with a Hardhat script. To deploy the contract for production, follow these steps:
 
 1.  **Configure your deployment network:**
     Update the `hardhat.config.js` file with the desired network configuration, including the network URL and private key.
-2.  **Run the deployment script:**
+2.  **Set the required environment variables:**
     ```sh
-    npx hardhat run scripts/deploy.js --network <your-network>
+    export HONEY_TOKEN_ADDRESS=<your-honey-token-address>
+    export GAS_SERVICE_ADDRESS=<your-gas-service-address>
+    export FEE_VAULT_ADDRESS=<your-fee-vault-address>
+    export ICA_HUB_ADDRESS=<your-ica-hub-address>
+    ```
+3.  **Run the deployment script:**
+    ```sh
+    npx hardhat run scripts/deploy-production.js --network <your-network>
     ```
 
 ### Post-Deployment
