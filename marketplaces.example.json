@@ -1,0 +1,34 @@
+{
+  "marketplaces": [
+    {
+      "type": "stripe",
+      "secret_env": "STRIPE_SECRET_KEY",
+      "currency": "usd"
+    },
+    {
+      "type": "lemonsqueezy",
+      "api_key_env": "LEMON_API_KEY",
+      "store_id_env": "LEMON_STORE_ID",
+      "variant_id_env": "LEMON_VARIANT_ID",
+      "test_mode": false
+    },
+    {
+      "type": "shopify",
+      "shop": "your-store.myshopify.com",
+      "token_env": "SHOPIFY_ADMIN_TOKEN",
+      "api_version": "2025-01",
+      "status": "draft",
+      "vendor": "Your Company",
+      "product_type": "Digital Research Archive"
+    },
+    {
+      "type": "generic_post",
+      "name": "custom_marketplace_endpoint",
+      "url": "https://your-api.example/listings",
+      "token_env": "CUSTOM_MARKETPLACE_TOKEN",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  ]
+}
