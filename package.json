@@ -1,4 +1,24 @@
 {
+  "name": "cartmanbridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Audit-track Solidity prototype for Berachain-oriented IBC/ICA settlement accounting.",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "clean": "hardhat clean",
+    "deploy:production": "hardhat run scripts/deploy-production.js"
+  },
+  "keywords": [
+    "berachain",
+    "ibc",
+    "ica",
+    "hardhat",
+    "solidity",
+    "settlement",
+    "relayer"
+  ],
+  "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0"
   },
