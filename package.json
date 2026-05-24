@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "ci": "npm run validate:serverless && npx hardhat compile",
+    "validate:serverless": "node scripts/validate-serverless.mjs",
+    "ipfs:pin-gguf": "node scripts/pin-gguf-to-ipfs.mjs"
+  },
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0"
   },
