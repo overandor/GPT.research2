@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the umbrella naming hierarchy for the stack previously described as OverLanguage / OverProgramming / Layer4Meter / Glyph ML / ReceiptOS.
+This document defines the top-level product taxonomy for the stack previously described as OverLanguage / OverProgramming / Layer4Meter / Glyph ML / ReceiptOS.
 
 The mature umbrella name is:
 
@@ -10,12 +10,12 @@ The mature umbrella name is:
 
 The reason is simple: OverLanguage sounds like a language. The full system is bigger than a language.
 
-Reality Compiler compiles local work into verified transferable value.
+Reality Compiler converts AI-native activity into provenance-backed, transferable artifact value.
 
-## Master Statement
+## Product Definition
 
 ```text
-Reality Compiler turns local work into verified transferable value.
+Reality Compiler converts AI-native activity into provenance-backed, transferable artifact value.
 ```
 
 Expanded:
@@ -30,6 +30,27 @@ Output:
 verified artifact + receipt + lambda score + buyer packet
 ```
 
+## Public One-Liner
+
+```text
+Reality Compiler
+A provenance engine for AI-native work.
+```
+
+## Public Product Verbs
+
+Use this public sequence:
+
+```text
+Capture work.
+Measure substrate.
+Prove provenance.
+Score value.
+Export receipt.
+```
+
+Do not lead publicly with glyphs, quantum, dark language, non-Euclidean math, or “break math” language. Those can remain internal research metaphors. The public product is proof/value infrastructure.
+
 ## Naming Hierarchy
 
 ```text
@@ -43,19 +64,47 @@ Reality Compiler
   exports LambdaReceipts
 ```
 
-## Taxonomy
+## Finalized Taxonomy
 
 ```text
-Glyphs          = symbolic compression layer
-OverLanguage    = grammar layer
-OverProgramming = execution philosophy
-Reality Compiler = product / system layer
-ReceiptOS       = ledger / proof layer
-LambdaBase      = transferability / value database
-GlyphVM         = symbolic runtime
-Layer4Meter     = substrate accounting layer
-JORKI           = file-access substrate
-GlyphLock       = time-gated codec/access layer
+Reality Compiler
+= the full product/system that converts work into verified transferable value
+
+OverLanguage 2.0
+= the workflow grammar
+
+Glyph Notation
+= symbolic compression / representation layer
+
+Agent Runtime
+= execution substrate for agents, tools, files, browser, terminal, APIs
+
+Layer4Meter
+= substrate accounting: screen, file, process, time, power, receipts
+
+ReceiptOS
+= tamper-evident ledger of what happened
+
+LambdaBase
+= database of transferability, value, proof density, reuse potential
+
+LambdaReceipts
+= exportable proof/value credentials
+
+JORKI
+= private file-access substrate
+
+GlyphLock
+= gated access / codec / encrypted disclosure layer
+
+SonicGlyph
+= audio proof layer
+
+ClientPulse
+= business/client-metric intelligence layer
+
+NullForge
+= anti-hallucination truth filter
 ```
 
 ## Stack
@@ -71,6 +120,9 @@ Reality Compiler
 ├── ReceiptOS / zkReceipt Ledger
 ├── Lambda Transferability Scorer
 ├── LambdaBase Value Database
+├── SonicGlyph Audio Proof Layer
+├── ClientPulse Business Intelligence Layer
+├── NullForge Truth Filter
 └── Financeable Artifact Exporter
 ```
 
@@ -78,7 +130,7 @@ Reality Compiler
 
 Reality Compiler is not an AR/spatial design tool.
 
-Apple already uses the Reality naming space for spatial tooling such as Reality Composer Pro, which Apple describes as a tool for rapidly iterating, previewing, and preparing 3D content for visionOS, iOS, and more.
+Apple already uses the Reality naming space for spatial tooling such as Reality Composer Pro. Apple describes Reality Composer Pro as a Mac tool for rapidly iterating, previewing, and preparing 3D content for visionOS apps, iOS apps, and more.
 
 Therefore the positioning must be explicit:
 
@@ -91,13 +143,53 @@ Reality Compiler compiles intent, work, proof, and substrate cost into transfera
 
 Reality Compiler should not invent a private proof universe when existing provenance and credential models already exist.
 
-Relevant standards alignment:
+External grounding:
 
-- **SLSA provenance**: software provenance describes where, when, and how artifacts were produced so consumers can verify they were built according to expectations and optionally rebuild them.
-- **W3C PROV**: provenance is information about entities, activities, and people involved in producing a data item or thing, useful for assessing quality, reliability, or trustworthiness.
-- **W3C Verifiable Credentials**: a verifiable credential is a tamper-evident credential whose authorship can be cryptographically verified.
+```text
+W3C PROV        = general provenance model
+SLSA v1.2       = software artifact provenance
+W3C VC 2.0      = tamper-evident credentials
+RealityCompiler = AI-native artifact/value provenance
+```
 
-Reality Compiler should export its receipts in a way that can later map into these provenance and credential models.
+### SLSA v1.2
+
+SLSA v1.2 provenance is approved and defines provenance as verifiable information about software artifacts describing where, when, and how something was produced.
+
+Reality Compiler mapping:
+
+```text
+SLSA provenance → software build artifact trail
+Reality Compiler → AI-native artifact/value production trail
+```
+
+### W3C PROV
+
+W3C PROV defines provenance as information about entities, activities, and people involved in producing a piece of data or thing, used to assess quality, reliability, or trustworthiness.
+
+Reality Compiler mapping:
+
+```text
+PROV Entity   → artifact / receipt / file / model / dataset
+PROV Activity → agent run / command / build / test / export
+PROV Agent    → user / AI agent / local tool / verifier
+```
+
+### W3C Verifiable Credentials 2.0
+
+W3C VC 2.0 defines a verifiable credential as a tamper-evident credential whose authorship can be cryptographically verified.
+
+Reality Compiler mapping:
+
+```text
+Verifiable Credential → LambdaReceipt
+Issuer                → Reality Compiler / user / organization
+Subject               → artifact / workflow / delivery packet
+Verifier              → buyer / client / investor / auditor
+Claims                → artifact existed, tests passed, value evidence, substrate cost
+```
+
+Reality Compiler should export receipts in a way that can later map into these provenance and credential models.
 
 ## Core Compilation Pipeline
 
@@ -111,6 +203,7 @@ Intent
 → Layer4Meter substrate accounting
 → ReceiptOS proof ledger
 → LambdaBase transferability score
+→ LambdaReceipt
 → Buyer packet
 ```
 
@@ -143,9 +236,14 @@ Purpose:
 - support machine-readable traces
 - reduce verbose prompt/log overhead
 
+Public boundary:
+
+- do not lead with glyphs externally
+- describe glyphs as internal representation, not magic
+
 ### OverLanguage 2.0
 
-The grammar layer.
+The workflow grammar layer.
 
 Purpose:
 
@@ -178,7 +276,7 @@ Purpose:
 
 ### JORKI
 
-The file-access substrate.
+The private file-access substrate.
 
 Purpose:
 
@@ -188,7 +286,7 @@ Purpose:
 
 ### GlyphLock
 
-The time-gated codec/access envelope.
+The gated access / codec / encrypted disclosure layer.
 
 Purpose:
 
@@ -211,7 +309,7 @@ Purpose:
 
 ### ReceiptOS
 
-The ledger/proof layer.
+The tamper-evident ledger/proof layer.
 
 Purpose:
 
@@ -235,7 +333,7 @@ Purpose:
 
 ### LambdaReceipt
 
-The output artifact.
+The exportable proof/value credential.
 
 Purpose:
 
@@ -245,6 +343,37 @@ Purpose:
 - LCI denominator
 - lambda transferability score
 - buyer-facing summary
+
+### SonicGlyph
+
+The audio proof layer.
+
+Purpose:
+
+- bind spoken work, demos, calls, or audio evidence to receipts
+- create audio fingerprints or transcript-linked proof shards
+- support voice/demo provenance without exposing private content by default
+
+### ClientPulse
+
+The business/client-metric intelligence layer.
+
+Purpose:
+
+- measure client/business signals
+- attach demand, acceptance, usage, or conversion evidence to artifacts
+- distinguish real buyer traction from speculative value
+
+### NullForge
+
+The anti-hallucination truth filter.
+
+Purpose:
+
+- mark unsupported claims as unverified
+- reject invented value claims
+- require evidence-backed receipt fields
+- prevent mythology from entering buyer packets
 
 ## Output Object
 
@@ -275,6 +404,9 @@ Receipt layer:  ReceiptOS
 Meter:          Layer4Meter
 Value DB:       LambdaBase
 Output:         LambdaReceipt
+File Access:    JORKI
+Codec Access:   GlyphLock
+Truth Filter:   NullForge
 ```
 
 Avoid making one name carry everything.
@@ -329,6 +461,32 @@ Reality Compiler compiles intent, agent execution, file changes, substrate cost,
 Show me what was built, what proof exists, what it cost, and why it is transferable.
 ```
 
+## Public Product Hierarchy
+
+Use this publicly:
+
+```text
+Reality Compiler
+A provenance engine for AI-native work.
+
+Powered by:
+OverLanguage
+Layer4Meter
+ReceiptOS
+LambdaBase
+JORKI
+```
+
+Do not lead with:
+
+```text
+glyphs
+quantum
+dark language
+break math
+hidden compute
+```
+
 ## Boundary Conditions
 
 Reality Compiler should avoid overclaiming.
@@ -340,13 +498,17 @@ Reality Compiler should avoid overclaiming.
 - Substrate cost is measured or estimated, not magically discovered.
 - ZK should only be claimed when an actual proof and verifier exist.
 - Receipts should eventually map to provenance/credential standards rather than remaining private lore.
+- Glyphs are internal representation unless the buyer specifically needs them.
+- “Reality” must be explained as provenance/value compilation, not AR scene composition.
 
 ## Final Law
 
 ```text
-OverLanguage writes the workflow.
-Layer4Meter measures the denominator.
-ReceiptOS proves the artifact.
-LambdaBase scores transferability.
-Reality Compiler packages the whole thing into value.
+OverLanguage describes the work.
+Agent Runtime performs the work.
+Layer4Meter measures the work.
+ReceiptOS proves the work.
+LambdaBase prices the work.
+LambdaReceipts transfer the work.
+Reality Compiler packages the work into value.
 ```
