@@ -47,7 +47,16 @@ Captures what changed on screen:
 - agent stuck loops
 - before/after screenshots or privacy-safe thumbnails
 
-The purpose is not continuous surveillance. The purpose is artifact-linked checkpoints.
+Primary macOS anchor:
+
+- ScreenCaptureKit for user-authorized screen/window/display capture.
+
+Boundary:
+
+- use checkpoint capture, not continuous surveillance by default
+- redact by policy
+- store hashes/thumbnails where possible instead of raw screens
+- require explicit user permission
 
 ### 2. File Plane
 
@@ -61,7 +70,15 @@ Captures file-system production activity:
 - cache growth
 - repo-relevant file deltas
 
-This plane binds visible work to byte-level evidence.
+Primary macOS anchor:
+
+- File System Events API for directory hierarchy change detection.
+
+Boundary:
+
+- FSEvents reports changes; the app still needs its own path filters, hashing policy, and redaction rules
+- store path hashes when file names are sensitive
+- separate source-relevant deltas from unrelated background churn
 
 ### 3. Process Plane
 
@@ -76,7 +93,16 @@ Captures execution activity:
 - agent runtimes
 - security-relevant process events where permitted
 
-This plane answers: what programs actually participated in producing the artifact?
+Primary macOS anchor:
+
+- Endpoint Security framework where entitlement and deployment model allow it.
+- fallback: shell wrapper, local command logger, launch/task observation, Git hook records, process samples.
+
+Boundary:
+
+- endpoint-level visibility may require Apple entitlements and user approval
+- do not make V1 depend on privileged monitoring
+- V1 should capture commands and child process classes before attempting full endpoint telemetry
 
 ### 4. Power / Performance Plane
 
@@ -92,7 +118,17 @@ Captures machine cost:
 - hangs or crashes
 - retry loops
 
-This plane converts work into cost accounting.
+Primary macOS anchors:
+
+- MetricKit for app diagnostics/performance reports where applicable.
+- powermetrics-style sampling for local CPU/power/QoS observations where permitted.
+- system counters and process sampling for V1 approximations.
+
+Boundary:
+
+- do not promise exact energy attribution in V1
+- record raw samples and make LCI weights adjustable
+- separate app-owned metrics from whole-machine background noise
 
 ### 5. Time / Snapshot Plane
 
@@ -105,7 +141,25 @@ Captures before/after state:
 - artifact creation window
 - temporal anchors
 
-This plane answers: what existed before the work, and what existed after?
+Primary macOS anchor:
+
+- Time Machine local snapshots and APFS temporal state where available.
+
+Boundary:
+
+- local snapshots are temporal anchors, not permanent storage guarantees
+- snapshot availability depends on APFS and Time Machine settings
+- never claim recovery or retention beyond tested platform behavior
+
+## Official Source Grounding
+
+This spec is grounded in existing macOS instrumentation surfaces, not in speculative hidden compute.
+
+- Apple documents ScreenCaptureKit as the framework for screen/window/display capture.
+- Apple’s File System Events Programming Guide says the file system events API lets an app ask for notification when the contents of a directory hierarchy are modified and can determine whether directory contents changed since the app last examined them.
+- Apple documents Endpoint Security as the framework for system security event monitoring.
+- Apple documents MetricKit as the framework for metrics and diagnostics.
+- Apple Support says Time Machine local snapshots copy changed files hourly, are stored on the same disk as the original files, are separate from backup-disk backups, and are kept up to 24 hours or until disk space is needed.
 
 ## Latent Compute Index
 
@@ -490,6 +544,8 @@ Layer4Meter should avoid overclaiming.
 - Screen capture should be checkpointed and redacted by policy.
 - Endpoint-level process visibility may require entitlements and permissions.
 - ZK should only be claimed when there is an actual proof system and verifier.
+- Metric attribution must be qualified as an estimate unless the source is app-owned and directly measured.
+- Baseline subtraction estimates excess substrate activity; it does not prove all excess came only from an agent.
 
 ## Final Law
 
@@ -504,3 +560,11 @@ Value per substrate unit = artifact value / hidden compute cost
 ```
 
 That makes AI-native production measurable, comparable, optimizable, and financeable.
+
+## Reference URLs
+
+- https://developer.apple.com/documentation/screencapturekit/
+- https://developer.apple.com/library/archive/documentation/Darwin/Conceptual/FSEvents_ProgGuide/Introduction/Introduction.html
+- https://developer.apple.com/documentation/endpointsecurity
+- https://developer.apple.com/documentation/metrickit
+- https://support.apple.com/guide/mac-help/about-time-machine-local-snapshots-mh35933/mac
