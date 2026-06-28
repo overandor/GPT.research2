@@ -2,45 +2,59 @@
 
 ## Status
 
-This document defines the primitive described as:
-
-```text
-genetic window resizing
-+ quadrant screen database
-+ scheduled process awakening
-+ trackpad-as-screen input surface
-= future-scheduled screen operating system
-```
+This document defines ChronoSwarm: a genetic, scheduled, receipt-backed screen operating layer.
 
 The product name is:
 
 > **ChronoSwarm**
 
-The underlying runtime name is:
+The runtime underneath is:
 
 > **ChronoQuadrantOS**
 
+Core equation:
+
+```text
+screen-as-database
++ genetic window layout
++ scheduled workflow awakening
++ quadrant agents
++ cursor-agent bodies
++ trackpad-as-screen
+= future-scheduled work runtime
+```
+
 ## Thesis
 
-A screen should not be a static canvas.
+The desktop is no longer a passive screen.
 
-A screen should be a living work allocator.
+The desktop becomes a scheduled runtime.
 
-Instead of the user manually resizing windows, opening tools, and deciding what to look at, the system should:
+A screen should not be a static canvas. A screen should be a living work allocator.
+
+Instead of the user manually resizing windows, opening tools, deciding what to look at, and remembering what should run later, the runtime should:
 
 1. observe the screen as queryable state,
 2. divide the workspace into active quadrants,
 3. assign each quadrant a role,
-4. resize and rearrange windows based on workload pressure,
-5. awaken scheduled workflows before they are manually requested,
-6. remove or collapse windows when their job is complete,
-7. record receipts for every layout, process, and action.
+4. assign each quadrant a visible cursor-agent,
+5. resize and rearrange windows based on workload pressure,
+6. awaken scheduled workflows before they are manually requested,
+7. remove or collapse windows when their job is complete,
+8. record receipts for every observation, layout, cursor movement, process, and action.
 
 ## Core Law
 
 ```text
 The user should not arrange windows.
 The runtime should arrange attention.
+```
+
+Or:
+
+```text
+The screen is not a desktop.
+The screen is a scheduled runtime.
 ```
 
 ## Existing Foundation
@@ -58,6 +72,7 @@ SQL-observed screen state
 + genetic layout policy
 + timed workflow planner
 + quadrant agents
++ visible cursor bodies
 + trackpad-screen input
 = self-adjusting work surface
 ```
@@ -69,16 +84,34 @@ ChronoSwarm
 ├── ScreenDB
 │   ├── windows table
 │   ├── processes table
+│   ├── panes table
 │   ├── screenshots table
+│   ├── cursors table
 │   ├── ui_elements table
+│   ├── trackpad_zones table
 │   ├── trackpad_events table
-│   └── actions table
+│   ├── actions table
+│   ├── receipts table
+│   ├── schedules table
+│   ├── layout_genomes table
+│   └── fitness_scores table
 │
 ├── QuadrantRuntime
 │   ├── Q0 research / observe
 │   ├── Q1 build / execute
 │   ├── Q2 verify / audit
 │   └── Q3 dashboard / receipt
+│
+├── CursorAgentRuntime
+│   ├── cursor_id = agent_id
+│   ├── visible agent body
+│   ├── role menu
+│   ├── permission policy
+│   ├── memory handle
+│   ├── API surface
+│   ├── tool access
+│   ├── visual trail
+│   └── receipt log
 │
 ├── GeneticLayoutGovernor
 │   ├── layout genome
@@ -111,11 +144,126 @@ ChronoSwarm
 │   └── remote operator input
 │
 └── ReceiptOS
+    ├── observation receipts
     ├── layout receipts
+    ├── cursor receipts
     ├── action receipts
     ├── screenshot receipts
     ├── process receipts
     └── schedule receipts
+```
+
+## Cursor-Agent Principle
+
+Each cursor becomes the agent.
+
+```text
+cursor_id = agent_id
+```
+
+A hidden agent is unaccountable.
+
+A cursor-agent is visible.
+
+If a screenshot is taken, the cursor cannot hide anywhere.
+
+An agent has:
+
+```text
+cursor position
+role
+permissions
+menu
+memory
+API surface
+tool access
+visual trail
+receipt log
+```
+
+The cursor is the agent's focal point of view.
+
+```text
+Where the cursor is, the agent is looking.
+What menu it exposes, the agent can do.
+What receipt it leaves, the agent actually did.
+```
+
+### Cursor Roles
+
+```text
+FinanceCursor  = finance menu + finance APIs + finance receipts
+BuilderCursor  = file/patch/process tools + build receipts
+VerifierCursor = audit/test/receipt tools + verification receipts
+ResearchCursor = citation/source/search tools + source receipts
+SecurityCursor = pause/kill/approve/deny authority + safety receipts
+```
+
+### Cursor Multiplication
+
+Good cursors can multiply into armies of child agents, but only with scope, budget, expiry, and permission.
+
+Child cursor spawn policy:
+
+```json
+{
+  "parent_cursor_id": "builder-main",
+  "child_cursor_id": "builder-child-001",
+  "role": "test-runner",
+  "scope": "workspace/tests",
+  "budget": {"commands": 5, "minutes": 10},
+  "expiry": "2026-06-27T13:00:00-04:00",
+  "permissions": ["read", "run_tests"],
+  "approval_required_for": ["write", "network", "delete"]
+}
+```
+
+## ScreenDB Receipt Mode
+
+ScreenDB Receipt Mode is always active.
+
+```text
+Every screen observation becomes database state.
+Every control action becomes a transaction.
+Every transaction requires a receipt.
+```
+
+Law:
+
+```text
+No screenshot.
+No database row.
+No receipt.
+No trust.
+```
+
+Every pane becomes a database object:
+
+```text
+windows
+processes
+panes
+screenshots
+cursors
+actions
+receipts
+schedules
+layout_genomes
+fitness_scores
+trackpad_zones
+```
+
+Every adjustment is a transaction:
+
+```text
+resize pane
+split pane
+close pane
+wake pane
+move cursor
+assign agent
+run action
+capture proof
 ```
 
 ## ScreenDB Tables
@@ -123,12 +271,17 @@ ChronoSwarm
 ```sql
 windows(id, app, title, x, y, w, h, z, focused, quadrant, role, timestamp)
 processes(pid, name, cpu, memory, started_at, role, quadrant)
-screenshots(id, quadrant, path, sha256, timestamp)
-ui_elements(id, window_id, role, label, x, y, w, h, confidence)
-trackpad_events(id, operator_id, x, y, pressure, gesture, glyph, timestamp)
+panes(id, window_id, parent_pane_id, x, y, w, h, role, active, timestamp)
+screenshots(id, quadrant, pane_id, path, sha256, timestamp)
+cursors(id, agent_id, role, x, y, quadrant, pane_id, visible, state, timestamp)
+ui_elements(id, window_id, pane_id, role, label, x, y, w, h, confidence)
+trackpad_zones(id, zone, x, y, w, h, quadrant, command_grammar, timestamp)
+trackpad_events(id, operator_id, x, y, pressure, gesture, glyph, target_quadrant, timestamp)
 actions(id, type, target, args_json, result, receipt_hash, timestamp)
+receipts(id, kind, subject_id, previous_hash, hash, payload_json, timestamp)
 schedules(id, workflow, trigger, next_run, last_run, status)
-layouts(id, genome, fitness, score, applied_at, reverted_at)
+layout_genomes(id, genome_json, parent_a, parent_b, mutation, applied_at, reverted_at)
+fitness_scores(id, layout_genome_id, score, components_json, timestamp)
 ```
 
 ## Genetic Layout Genome
@@ -177,6 +330,7 @@ mutation:
   split one browser into two panes
   collapse completed workflow
   promote failing verifier to center
+  restore previous layout if user rejects
 
 crossover:
   combine morning layout with current task pressure
@@ -223,6 +377,25 @@ Example:
   ]
 }
 ```
+
+## Program Lifecycle
+
+```text
+unborn → scheduled → waking → active → proving → sleeping → reborn
+```
+
+Window lifecycle:
+
+```text
+sleeping  = hidden/collapsed but scheduled
+warming   = preloaded but not focused
+awake     = visible and active
+working   = running process/tool
+cooling   = finishing and summarizing
+archived  = receipt written and hidden
+```
+
+This turns a program into a timed organism.
 
 ## Supported macOS Grounding
 
@@ -309,21 +482,6 @@ A remote operator is not a hidden mouse.
 
 It is a named input stream.
 
-## Window Awakening Model
-
-A window may be:
-
-```text
-sleeping  = hidden/collapsed but scheduled
-warming   = preloaded but not focused
-awake     = visible and active
-working   = running process/tool
-cooling   = finishing and summarizing
-archived  = receipt written and hidden
-```
-
-This turns a program into a timed organism.
-
 ## Example One-Hour Dense Workflow
 
 ```text
@@ -366,6 +524,7 @@ Rules:
 - visible control mode
 - explicit accessibility and screen permissions
 - per-workspace scope
+- visible cursor-agent body for every actor
 - panic pause
 - manual override always wins
 - receipt every action
@@ -373,21 +532,24 @@ Rules:
 - no secret capture by default
 - no remote input without visible consent
 - no uncontrolled shell execution
+- no private API dependency as the default path
 
 ## MVP Build Order
 
 1. ScreenDB snapshot: windows, apps, processes, screenshots.
 2. SQL query UI.
 3. Manual quadrant assigner.
-4. WindowActuator: move/resize/focus only.
-5. Receipt every layout change.
-6. Simple layout fitness score.
-7. Genetic mutation over quadrant sizes.
-8. ChronoScheduler with one timed workflow.
-9. TrackpadScreen overlay heatmap.
-10. Remote operator input with consent.
-11. Future workflow queue.
-12. Integration with Builder cursor.
+4. CursorAgent body: visible cursor id, role, menu, trail, receipt log.
+5. WindowActuator: move/resize/focus only.
+6. Receipt every layout change.
+7. Simple layout fitness score.
+8. Genetic mutation over quadrant sizes.
+9. ChronoScheduler with one timed workflow.
+10. TrackpadScreen overlay heatmap.
+11. Remote operator input with consent.
+12. Future workflow queue.
+13. Integration with Builder cursor.
+14. Child-cursor spawning with scope, budget, and expiry.
 
 ## Acceptance Test
 
@@ -398,21 +560,26 @@ Then ChronoSwarm expands Builder quadrant,
 shrinks idle research quadrant,
 captures before/after screenshots,
 writes a layout receipt,
+keeps BuilderCursor visible as agent body,
 and restores the prior layout on command.
 ```
 
 ## Final Law
 
 ```text
-The screen is not a desktop.
-The screen is a scheduled runtime.
+Do not manage windows.
+Breed layouts.
+
+Do not open apps.
+Awaken workflows.
+
+Do not hide agents.
+Give them cursor bodies.
 ```
 
 Or:
 
 ```text
-Do not manage windows.
-Breed layouts.
-Do not open apps.
-Awaken workflows.
+The old desktop waits for commands.
+ChronoSwarm plants work into the future, wakes the right pane, resizes attention, runs the process, captures the screen, writes the receipt, and sleeps when the job is done.
 ```
